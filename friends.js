@@ -330,7 +330,7 @@ class NewsTicker {
         const chosen = eligible[randomIndex(eligible.length)];
         this.played[chosen.key] = now;
         writeLocal(COOLDOWN_KEY, this.played);
-        this.show(`${chosen.name} · ${chosen.message}`, true);
+        this.show(`${chosen.name}: ${chosen.message}`, true);
         return;
       }
     }
