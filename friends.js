@@ -137,20 +137,34 @@ function refresh() {
   void exchange("sync");
 }
 
-function openProfile() {
+const screens = ["info", "ranking", "play", "profile"];
+
+function showScreen(screen) {
+  for (const id of screens) {
+    byId(id).hidden = id !== screen;
+    byId(`${id}-open`).setAttribute("aria-pressed", String(id === screen));
+  }
+  window.scrollTo(0, 0);
+  ticker.resumeOrPause();
+}
+
+function populateProfile() {
   byId("profile-title").textContent = profile ? "Profiel" : "Hoe mogen we je noemen?";
   byId("name-form").querySelector("label").textContent = profile ? "Naam wijzigen" : "Je naam";
   byId("name").value = profile?.name ?? "";
   byId("join-form").hidden = !endpoint || !profile || profile.joined;
-  byId("profile-status").textContent = "";
-  byId("profile-close").hidden = !profile;
-  if (!byId("profile").open) byId("profile").showModal();
 }
 
-byId("profile").addEventListener("cancel", event => {
-  if (!profile) event.preventDefault();
-});
-byId("profile-open").onclick = openProfile;
+for (const id of screens) {
+  byId(`${id}-open`).onclick = () => {
+    showScreen(id);
+    if (id === "ranking") {
+      renderRanking();
+      if (!ranking || onlineError) refresh();
+    }
+  };
+}
+
 byId("name-form").onsubmit = async event => {
   event.preventDefault();
   const name = byId("name").value.trim();
@@ -160,7 +174,8 @@ byId("name-form").onsubmit = async event => {
     if (await exchange("rename", {name})) byId("profile-status").textContent = "Je naam is opgeslagen.";
     return;
   }
-  if (!profile) {
+  const firstVisit = !profile;
+  if (firstVisit) {
     const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte =>
       byte.toString(16).padStart(2, "0")).join("");
     const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte =>
@@ -170,8 +185,9 @@ byId("name-form").onsubmit = async event => {
   profile.name = name;
   saveProfile();
   showConnection();
-  if (endpoint) openProfile();
-  else byId("profile").close();
+  populateProfile();
+  byId("profile-status").textContent = "Je naam is opgeslagen.";
+  if (firstVisit) showScreen("info");
 };
 
 byId("join-form").onsubmit = async event => {
@@ -182,12 +198,6 @@ byId("join-form").onsubmit = async event => {
     byId("join-form").hidden = true;
     byId("profile-status").textContent = "Je bent lid van de vriendengroep.";
   }
-};
-
-byId("ranking-open").onclick = () => {
-  renderRanking();
-  byId("ranking").showModal();
-  if (!ranking || onlineError) refresh();
 };
 
 function countMessage() {
@@ -244,6 +254,7 @@ class NewsTicker {
     this.timer = null;
     this.animation = null;
     this.current = null;
+    this.isPlayerNews = false;
     this.inGap = false;
     this.button.onclick = () => {
       this.paused = !this.paused;
@@ -253,7 +264,7 @@ class NewsTicker {
     };
     document.addEventListener("visibilitychange", () => this.resumeOrPause());
     motion.addEventListener("change", () => {
-      if (this.current) this.show(this.current);
+      if (this.current) this.show(this.current, this.isPlayerNews);
     });
     this.setFeed(null);
   }
@@ -266,7 +277,8 @@ class NewsTicker {
       this.animation = null;
       this.current = null;
       this.inGap = false;
-      this.line.textContent = "";
+      this.line.textContent = "Bericht plaatsen";
+      this.line.className = "still";
       this.button.disabled = true;
       return;
     }
@@ -276,6 +288,10 @@ class NewsTicker {
     }
     this.friends = feed.players;
     this.button.disabled = !this.regular.length;
+    if (!this.regular.length && !this.current && !this.inGap) {
+      this.line.textContent = "Bericht plaatsen";
+      this.line.className = "still";
+    }
     if (!this.current && !this.inGap) this.next();
   }
 
@@ -296,7 +312,7 @@ class NewsTicker {
 
   resumeOrPause() {
     if (!this.active) return;
-    if (this.paused || document.hidden) {
+    if (this.paused || document.hidden || byId("play").hidden) {
       this.stopClock();
       this.animation?.pause();
       return;
@@ -312,7 +328,7 @@ class NewsTicker {
   }
 
   next() {
-    if (!this.active || this.paused || document.hidden || !this.regular.length) return;
+    if (!this.active || this.paused || document.hidden || byId("play").hidden || !this.regular.length) return;
     if (this.regularCount === 3) {
       this.regularCount = 0;
       const now = Date.now();
@@ -324,7 +340,7 @@ class NewsTicker {
         const chosen = eligible[randomIndex(eligible.length)];
         this.played[chosen.key] = now;
         writeLocal(COOLDOWN_KEY, this.played);
-        this.show(`${chosen.name} · ${chosen.message}`);
+        this.show(`${chosen.name} · ${chosen.message}`, true);
         return;
       }
     }
@@ -333,10 +349,12 @@ class NewsTicker {
     this.show(this.deck.pop());
   }
 
-  show(text) {
+  show(text, isPlayerNews = false) {
     this.animation?.cancel();
     this.animation = null;
     this.current = text;
+    this.isPlayerNews = isPlayerNews;
+    this.line.classList.toggle("player-news", isPlayerNews);
     this.line.textContent = text;
     this.line.classList.toggle("still", motion.matches);
     const width = byId("ticker-open").clientWidth;
@@ -364,7 +382,8 @@ class NewsTicker {
 
 const ticker = new NewsTicker();
 if (profile) saveProfile();
-else openProfile();
+populateProfile();
+if (!profile) showScreen("profile");
 showConnection();
 refresh();
 
