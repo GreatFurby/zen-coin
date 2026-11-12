@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "Zen Coin",
+  "short_name": "Zen Coin",
+  "lang": "nl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#f4f3eb",
+  "background_color": "#f4f3eb",
+  "icons": [
+    {"src":"cat-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"cat-512.png","sizes":"512x512","type":"image/png","purpose":"any"}
+  ]
+}

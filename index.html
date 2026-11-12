@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f3eb">
+<title>Zen Coin</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="cat-192.png">
+<link rel="apple-touch-icon" href="cat-180.png">
+<script defer src="config.js"></script>
+<script defer src="game.js"></script>
+<script defer src="friends.js"></script>
+</head>
+<body>
+<main>
+  <header>
+    <nav aria-label="Spelmenu">
+      <button id="ranking-open" type="button">Ranglijst</button>
+      <button id="profile-open" type="button">Profiel</button>
+    </nav>
+    <div class="intro">
+      <img src="cat.webp" width="512" height="512" alt="Mediterende kat op een gouden munt">
+      <div>
+        <h1>Zen Coin</h1>
+        <p id="greeting" hidden></p>
+        <p class="guide">Tik op een stapel en verplaats de gelijke munten aan de rechterkant. Kies een lege plek of een stapel die eindigt op hetzelfde niveau. Tien gelijke munten worden samen één munt van het volgende niveau.</p>
+      </div>
+    </div>
+    <dl>
+      <div><dt>Rondescore</dt><dd id="score">0</dd></div>
+      <div><dt>Persoonlijk record</dt><dd id="best">0</dd></div>
+      <div><dt>Hoogste niveau</dt><dd id="highest">—</dd></div>
+      <div><dt>Speelplekken</dt><dd id="unlocked">3</dd></div>
+      <div><dt>Vrije muntplaatsen</dt><dd id="free">30</dd></div>
+    </dl>
+    <p id="storage" role="status" hidden></p>
+  </header>
+  <div class="ticker" aria-label="Spelnieuws">
+    <button id="ticker-open" type="button" aria-label="Bericht plaatsen"><span id="ticker-line"></span></button>
+    <button id="ticker-pause" type="button" aria-pressed="false">Pauze</button>
+  </div>
+  <div class="actions">
+    <button id="spawn" type="button">Nieuwe munten</button>
+    <button id="reset" type="button">Opnieuw beginnen</button>
+  </div>
+  <p id="status" role="status"></p>
+  <p id="no-moves" role="status"></p>
+  <form id="paging" aria-label="Bladeren door het speelbord" hidden>
+    <button id="page-prev" type="button" aria-label="Vorige pagina">‹</button>
+    <label for="page-input">Pagina</label>
+    <input id="page-input" type="number" min="1" value="1" required aria-describedby="page-total">
+    <span id="page-total"></span>
+    <button type="submit">Ga</button>
+    <button id="page-next" type="button" aria-label="Volgende pagina">›</button>
+    <button id="page-occupied" type="button">Volgende gevulde pagina</button>
+  </form>
+  <section id="board" aria-label="Speelbord"></section>
+  <p id="connection" role="status"></p>
+</main>
+<dialog id="reset-dialog" aria-labelledby="reset-title">
+  <h2 id="reset-title">Opnieuw beginnen?</h2>
+  <p>Weet je het zeker? Je bord wordt leeggemaakt en je rondescore gaat terug naar nul. Je persoonlijk record blijft bewaard.</p>
+  <form method="dialog" class="dialog-actions">
+    <button autofocus>Annuleren</button><button class="primary" id="reset-confirm">Ja, begin opnieuw</button>
+  </form>
+</dialog>
+<dialog id="profile" aria-labelledby="profile-title">
+  <h2 id="profile-title">Profiel</h2>
+  <form id="name-form">
+    <label for="name">Hoe mogen we je noemen?</label>
+    <input id="name" required maxlength="40" autocomplete="nickname">
+    <button id="name-save" class="primary">Naam opslaan</button>
+  </form>
+  <form id="join-form" hidden>
+    <label for="invite">Uitnodigingscode</label>
+    <input id="invite" type="password" required maxlength="256" autocomplete="off" autocapitalize="none">
+    <button class="primary">Lid worden</button>
+  </form>
+  <p id="profile-status" role="status"></p>
+  <form method="dialog"><button id="profile-close">Sluiten</button></form>
+</dialog>
+<dialog id="ranking" aria-labelledby="ranking-title">
+  <h2 id="ranking-title">Ranglijst</h2>
+  <p id="ranking-status" role="status"></p>
+  <div class="ranking-scroll" tabindex="0" aria-label="Scores">
+    <table><thead><tr><th scope="col">Plaats</th><th scope="col">Naam</th><th scope="col">Beste score</th></tr></thead><tbody id="ranking-body"></tbody></table>
+  </div>
+  <form method="dialog"><button>Sluiten</button></form>
+</dialog>
+<dialog id="composer" aria-labelledby="composer-title">
+  <h2 id="composer-title">Bericht plaatsen</h2>
+  <form id="message-form">
+    <label for="message">Je bericht</label>
+    <textarea id="message" rows="4" maxlength="160" aria-describedby="message-count message-privacy"></textarea>
+    <small id="message-count">0 / 160</small>
+    <p id="message-privacy">De beheerder van het spel kan eerdere namen en berichten bekijken.</p>
+    <div class="dialog-actions">
+      <button class="primary" id="message-save">Opslaan</button>
+      <button type="button" id="message-clear">Bericht wissen</button>
+    </div>
+  </form>
+  <p id="message-status" role="status"></p>
+  <form method="dialog"><button>Sluiten</button></form>
+</dialog>
+</body>
+</html>
