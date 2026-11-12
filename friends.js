@@ -243,25 +243,17 @@ function shuffled(lines) {
 class NewsTicker {
   constructor() {
     this.line = byId("ticker-line");
-    this.button = byId("ticker-pause");
     this.played = readLocal(COOLDOWN_KEY) || {};
     this.regular = [];
     this.deck = [];
     this.friends = [];
     this.regularCount = 0;
-    this.paused = false;
     this.active = false;
     this.timer = null;
     this.animation = null;
     this.current = null;
     this.isPlayerNews = false;
     this.inGap = false;
-    this.button.onclick = () => {
-      this.paused = !this.paused;
-      this.button.setAttribute("aria-pressed", String(this.paused));
-      this.button.textContent = this.paused ? "Verder" : "Pauze";
-      this.resumeOrPause();
-    };
     document.addEventListener("visibilitychange", () => this.resumeOrPause());
     motion.addEventListener("change", () => {
       if (this.current) this.show(this.current, this.isPlayerNews);
@@ -279,7 +271,6 @@ class NewsTicker {
       this.inGap = false;
       this.line.textContent = "Bericht plaatsen";
       this.line.className = "still";
-      this.button.disabled = true;
       return;
     }
     if (JSON.stringify(this.regular) !== JSON.stringify(feed.regular)) {
@@ -287,7 +278,6 @@ class NewsTicker {
       this.deck = shuffled(this.regular);
     }
     this.friends = feed.players;
-    this.button.disabled = !this.regular.length;
     if (!this.regular.length && !this.current && !this.inGap) {
       this.line.textContent = "Bericht plaatsen";
       this.line.className = "still";
@@ -312,7 +302,7 @@ class NewsTicker {
 
   resumeOrPause() {
     if (!this.active) return;
-    if (this.paused || document.hidden || byId("play").hidden) {
+    if (document.hidden || byId("play").hidden) {
       this.stopClock();
       this.animation?.pause();
       return;
@@ -328,7 +318,7 @@ class NewsTicker {
   }
 
   next() {
-    if (!this.active || this.paused || document.hidden || byId("play").hidden || !this.regular.length) return;
+    if (!this.active || document.hidden || byId("play").hidden || !this.regular.length) return;
     if (this.regularCount === 3) {
       this.regularCount = 0;
       const now = Date.now();

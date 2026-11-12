@@ -145,11 +145,16 @@ button:disabled { opacity: .65; cursor: default; }
 .intro img { width: clamp(80px, 22vw, 158px); height: auto; border-radius: 22%; }
 #greeting { margin: .45rem 0; font-weight: 700; overflow-wrap: anywhere; }
 dl { max-width: none; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
-.ticker { display: flex; gap: 4px; align-items: flex-start; }
-#ticker-open, #ticker-pause { background: transparent; border: 0; padding-inline: 4px; }
-#ticker-open { flex: 1; min-width: 0; overflow: hidden; text-align: left; }
-#ticker-open:focus-visible, #ticker-pause:focus-visible { outline-offset: -3px; }
-#ticker-pause { font-size: .82rem; }
+#ticker-open {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding-inline: 4px;
+  overflow: hidden;
+  text-align: left;
+}
+#ticker-open:focus-visible { outline-offset: -3px; }
 #ticker-line.player-news { color: #7c315e; font-weight: 650; }
 #ticker-line { display: inline-block; white-space: pre; }
 #ticker-open:has(.still) { white-space: normal; }
