@@ -189,3 +189,40 @@ th { position: sticky; top: 0; background: #e5ece0; }
   font-size: clamp(.48rem, 2vw, .62rem);
   line-height: .95;
 }
+
+#board-view[aria-pressed="true"] {
+  background: #315c49;
+  border-color: #315c49;
+  color: #fff;
+}
+
+#board.compact {
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 7px;
+}
+#board.compact .slot { padding: 6px 4px; }
+#board.compact .slot-heading {
+  display: block;
+  margin: 0 0 4px;
+  text-align: center;
+  font-size: .73rem;
+}
+#board.compact .count { display: none; }
+#board.compact .track {
+  display: block;
+  position: relative;
+  height: 104px;
+  padding: 0;
+  background: #eeede2;
+}
+#board.compact .cell {
+  position: absolute;
+  top: calc(3px + var(--stack-offset));
+  inset-inline: 0;
+  margin-inline: auto;
+  width: min(100%, 36px);
+}
+#board.compact .cell:not(.coin) { top: 34px; }
+#board.compact .coin { font-size: .82rem; }
+#board.compact .coin-large { font-size: .62rem; }
+#board.compact .picked { transform: none; }

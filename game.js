@@ -11,6 +11,15 @@
   const EMPTY_STACK = Object.freeze([]);
   const SAVE_KEY = "zen-coin-sorting-v1";
 
+  const BOARD_VIEW_KEY = "zen-coin-board-view-v1";
+  let compactView = false;
+  try {
+    compactView = localStorage.getItem(BOARD_VIEW_KEY) === "compact";
+  } catch {
+    // The toggle still works for this session when storage is blocked.
+  }
+
+  const viewButton = document.getElementById("board-view");
   const board = document.getElementById("board");
   const spawnButton = document.getElementById("spawn");
   const gameStatus = document.getElementById("status");
@@ -312,6 +321,8 @@
   }
 
   function render(merged = new Map()) {
+    board.classList.toggle("compact", compactView);
+    viewButton.setAttribute("aria-pressed", String(compactView));
     const free = freeSpaces();
     highestDisplay.textContent = game.highestEver ? fmt(game.highestEver) : "—";
     unlockedDisplay.textContent = fmt(slotCount());
@@ -357,7 +368,9 @@
       const picked = selectedSlot === index;
       const pickedFrom = picked ? stack.length - frontRun(stack) : stack.length;
       const label = `Plek ${fmt(index + 1)}, ${fmt(stack.length)} van ${fmt(CAPACITY)} munten`;
-      button.setAttribute("aria-label", stack.length ? `${label}. Van links naar rechts: ${stack.map(fmt).join(", ")}` : label);
+      button.setAttribute("aria-label", stack.length
+        ? `${label}. ${compactView ? "Van achter naar voren" : "Van links naar rechts"}: ${stack.map(fmt).join(", ")}`
+        : label);
       button.setAttribute("aria-pressed", String(picked));
 
       const heading = document.createElement("span");
@@ -367,14 +380,16 @@
       const track = document.createElement("span");
       track.className = "track";
       track.setAttribute("aria-hidden", "true");
-      for (let position = 0; position < CAPACITY; position++) {
+      const cellCount = compactView ? Math.max(1, stack.length) : CAPACITY;
+      for (let position = 0; position < cellCount; position++) {
         const cell = document.createElement("span");
         cell.className = "cell";
         const level = stack[position];
         if (level !== undefined) {
           cell.classList.add("coin");
-          const number = fmt(level);
-          if (level >= 1000) {
+          const showNumber = !compactView || position === stack.length - 1;
+          const number = showNumber ? fmt(level) : "";
+          if (showNumber && level >= 1000) {
             cell.classList.add("coin-large");
             const split = number.lastIndexOf(".") + 1;
             const leading = document.createElement("span");
@@ -389,6 +404,7 @@
           if (position >= pickedFrom) cell.classList.add("picked");
           if (merged.has(index)) cell.classList.add("merged");
         }
+        if (compactView) cell.style.setProperty("--stack-offset", `${position * 7}px`);
         track.append(cell);
       }
       button.replaceChildren(heading, track);
@@ -404,6 +420,16 @@
   paging.addEventListener("submit", event => {
     event.preventDefault();
     if (Number.isInteger(pageInput.valueAsNumber)) changePage(pageInput.valueAsNumber - 1);
+  });
+
+  viewButton.addEventListener("click", () => {
+    compactView = !compactView;
+    try {
+      localStorage.setItem(BOARD_VIEW_KEY, compactView ? "compact" : "classic");
+    } catch {
+      // The current view remains usable.
+    }
+    render();
   });
 
   spawnButton.addEventListener("click", spawnCoins);

@@ -1,4 +1,4 @@
-const CACHE = "zen-coin-shell-v6";
+const CACHE = "zen-coin-shell-v7";
 const shell = ["index.html", "style.css", "config.js", "game.js", "friends.js",
   "manifest.webmanifest", "cat-180.png", "cat-192.png", "cat-512.png", "cat.webp"];
 self.addEventListener("install", event => {
