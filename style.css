@@ -226,3 +226,20 @@ th { position: sticky; top: 0; background: #e5ece0; }
 #board.compact .coin { font-size: .82rem; }
 #board.compact .coin-large { font-size: .62rem; }
 #board.compact .picked { transform: none; }
+
+#board-navigation {
+  display: block;
+  min-height: 44px;
+  margin: 6px 0 16px;
+  padding: 6px 10px;
+  border: 1px solid #8b9e91;
+  border-radius: 10px;
+  background: #fcfdf7;
+  color: inherit;
+  font: inherit;
+}
+#board.scroll-board .slot {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 72px;
+}
+#board.scroll-board.compact .slot { contain-intrinsic-block-size: auto 122px; }

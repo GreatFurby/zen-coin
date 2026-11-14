@@ -12,13 +12,17 @@
   const SAVE_KEY = "zen-coin-sorting-v1";
 
   const BOARD_VIEW_KEY = "zen-coin-board-view-v1";
+  const BOARD_NAVIGATION_KEY = "zen-coin-board-navigation-v1";
   let compactView = false;
+  let scrollBoard = false;
   try {
     compactView = localStorage.getItem(BOARD_VIEW_KEY) === "compact";
+    scrollBoard = localStorage.getItem(BOARD_NAVIGATION_KEY) === "scroll";
   } catch {
     // The toggle still works for this session when storage is blocked.
   }
 
+  const navigationSelect = document.getElementById("board-navigation");
   const viewButton = document.getElementById("board-view");
   const board = document.getElementById("board");
   const spawnButton = document.getElementById("spawn");
@@ -320,7 +324,10 @@
     return next === Infinity ? first : next;
   }
 
+  const renderedSlots = new WeakMap();
+
   function render(merged = new Map()) {
+    board.classList.toggle("scroll-board", scrollBoard);
     board.classList.toggle("compact", compactView);
     viewButton.setAttribute("aria-pressed", String(compactView));
     const free = freeSpaces();
@@ -341,15 +348,15 @@
 
     const pages = pageCount();
     currentPage = Math.min(currentPage, pages - 1);
-    paging.hidden = pages === 1;
+    paging.hidden = scrollBoard || pages === 1;
     pageInput.max = pages;
     pageInput.value = currentPage + 1;
     document.getElementById("page-total").textContent = `van ${fmt(pages)}`;
     previousPage.disabled = currentPage === 0;
     nextPage.disabled = currentPage === pages - 1;
-    nextOccupied.disabled = nextOccupiedPage(Object.keys(game.stacks)) === Infinity;
-    const start = currentPage * PAGE_SIZE;
-    const visible = Math.min(PAGE_SIZE, slotCount() - start);
+    nextOccupied.disabled = scrollBoard || nextOccupiedPage(Object.keys(game.stacks)) === Infinity;
+    const start = scrollBoard ? 0 : currentPage * PAGE_SIZE;
+    const visible = scrollBoard ? slotCount() : Math.min(PAGE_SIZE, slotCount() - start);
 
     // Keep the slot buttons in place so keyboard focus survives each action.
     while (board.children.length > visible) board.lastElementChild.remove();
@@ -361,11 +368,14 @@
         button = document.createElement("button");
         button.type = "button";
         button.className = "slot";
-        button.addEventListener("click", () => clickSlot(currentPage * PAGE_SIZE + offset));
+        button.addEventListener("click", () => clickSlot((scrollBoard ? 0 : currentPage * PAGE_SIZE) + offset));
         board.append(button);
       }
 
       const picked = selectedSlot === index;
+      const signature = [index, compactView, picked, merged.has(index), ...stack].join(",");
+      if (renderedSlots.get(button) === signature) continue;
+      renderedSlots.set(button, signature);
       const pickedFrom = picked ? stack.length - frontRun(stack) : stack.length;
       const label = `Plek ${fmt(index + 1)}, ${fmt(stack.length)} van ${fmt(CAPACITY)} munten`;
       button.setAttribute("aria-label", stack.length
@@ -420,6 +430,20 @@
   paging.addEventListener("submit", event => {
     event.preventDefault();
     if (Number.isInteger(pageInput.valueAsNumber)) changePage(pageInput.valueAsNumber - 1);
+  });
+
+  navigationSelect.value = scrollBoard ? "scroll" : "pages";
+  navigationSelect.addEventListener("change", () => {
+    scrollBoard = navigationSelect.value === "scroll";
+    if (!scrollBoard && selectedSlot !== null) {
+      currentPage = Math.floor(selectedSlot / PAGE_SIZE);
+    }
+    try {
+      localStorage.setItem(BOARD_NAVIGATION_KEY, navigationSelect.value);
+    } catch {
+      // The chosen navigation remains active for this session.
+    }
+    render();
   });
 
   viewButton.addEventListener("click", () => {
