@@ -77,7 +77,20 @@ function renderRanking() {
   ranking?.forEach((player, index) => {
     if (index === 0 || player.best !== ranking[index - 1].best) place = index + 1;
     const row = tbody.insertRow();
-    for (const value of [fmt(place), player.name, fmt(player.best)]) row.insertCell().textContent = value;
+    row.insertCell().textContent = fmt(place);
+    const name = row.insertCell();
+    name.textContent = player.name;
+    if (validRecordCoin(player.recordCoin)) {
+      const {level, color} = player.recordCoin;
+      const coin = document.createElement("span");
+      coin.className = "ranking-coin";
+      coin.textContent = fmt(level);
+      coin.style.setProperty("--coin-color", color);
+      coin.setAttribute("role", "img");
+      coin.setAttribute("aria-label", `Hoogste munt: niveau ${fmt(level)}`);
+      name.append(coin);
+    }
+    row.insertCell().textContent = fmt(player.best);
   });
 }
 
@@ -85,8 +98,14 @@ function acceptSnapshot(snapshot) {
   ownMessage = snapshot.message;
   profile.name = snapshot.name;
   profile.syncedBest = snapshot.best;
-  if (snapshot.best > game.best) {
-    game.best = snapshot.best;
+  const record = validRecordCoin(snapshot.recordCoin) ? snapshot.recordCoin : null;
+  profile.syncedCoinLevel = record?.level ?? 0;
+  const localCoinLevel = game.recordCoin?.level ?? 0;
+  const updateCoin = record && record.level >= localCoinLevel &&
+    (record.level > localCoinLevel || record.color !== game.recordCoin?.color);
+  if (snapshot.best > game.best || updateCoin) {
+    game.best = Math.max(game.best, snapshot.best);
+    if (updateCoin) game.recordCoin = record;
     saveGame();
     render();
   }
@@ -105,7 +124,7 @@ async function exchange(action, fields = {}) {
   for (const id of controls) byId(id).disabled = true;
   byId("join-form").querySelector("button").disabled = true;
   try {
-    const snapshot = await request(action, {best: game.best, ...fields});
+    const snapshot = await request(action, {best: game.best, recordCoin: game.recordCoin ?? null, ...fields});
     if (action === "join") profile.joined = true;
     acceptSnapshot(snapshot);
     return true;
@@ -377,8 +396,13 @@ if (!profile) showScreen("profile");
 showConnection();
 refresh();
 
+function hasPendingRecords() {
+  return profile?.joined && (game.best > (profile.syncedBest ?? 0) ||
+    (game.recordCoin?.level ?? 0) > (profile.syncedCoinLevel ?? 0));
+}
+
 window.addEventListener("zen-score", () => {
-  if (!profile?.joined || game.best <= profile.syncedBest) return;
+  if (!hasPendingRecords()) return;
   if (busy) scoreChangedDuringRequest = true;
   else refresh();
 });
@@ -391,11 +415,11 @@ window.addEventListener("offline", () => {
 });
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && (Date.now() - lastRefresh >= FIVE_MINUTES ||
-      onlineError || game.best > (profile?.syncedBest ?? 0))) refresh();
+      onlineError || hasPendingRecords())) refresh();
 });
 setInterval(() => {
   if (Date.now() - lastRefresh >= FIVE_MINUTES || onlineError ||
-      game.best > (profile?.syncedBest ?? 0)) refresh();
+      hasPendingRecords()) refresh();
 }, 15_000);
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   navigator.serviceWorker.register("sw.js").catch(() => {

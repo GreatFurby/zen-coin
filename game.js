@@ -112,6 +112,15 @@
     return slotCountForLevel(game.highestEver);
   }
 
+  function validRecordCoin(coin) {
+    if (!coin || !Number.isInteger(coin.level) || coin.level < 1 || coin.level > 50000 ||
+        typeof coin.color !== "string") return false;
+    const hsl = /^hsl\((\d{1,3}), (\d{1,3})%, (\d{1,3})%\)$/.exec(coin.color);
+    if (hsl) return Number(hsl[1]) < 360 && Number(hsl[2]) <= 100 && Number(hsl[3]) <= 100;
+    const rgb = /^rgb\((\d{1,3}), (\d{1,3}), (\d{1,3})\)$/.exec(coin.color);
+    return !!rgb && rgb.slice(1).every(channel => Number(channel) <= 255);
+  }
+
   function normalizeSave(saved) {
     if (!saved || !Number.isInteger(saved.highestEver) ||
         saved.highestEver < 0 || saved.highestEver > MAX_LEVEL) return null;
@@ -137,7 +146,8 @@
     }
     const score = validScore(saved.score) ? saved.score : 0;
     const best = Math.max(score, validScore(saved.best) ? saved.best : 0);
-    return {stacks, highestEver, palette, score, best};
+    const recordCoin = validRecordCoin(saved.recordCoin) ? saved.recordCoin : null;
+    return {stacks, highestEver, palette, score, best, recordCoin};
   }
 
   function validScore(value) {
@@ -181,6 +191,12 @@
   let game = loadGame() ?? newGame();
   let colors = extendedPalette(game.palette);
 
+  function updateRecordCoin() {
+    if (game.highestEver > (game.recordCoin?.level ?? 0)) {
+      game.recordCoin = {level: game.highestEver, color: coinColor(game.highestEver)};
+    }
+  }
+
   function freeSpaces() {
     return slotCount() * CAPACITY -
       Object.values(game.stacks).reduce((total, stack) => total + stack.length, 0);
@@ -219,6 +235,7 @@
     }
     if (slotCount() > oldSlotCount) message += " Er is een plek vrijgespeeld.";
     game.best = Math.max(game.best, game.score);
+    updateRecordCoin();
     saveGame();
     render(merged);
     window.dispatchEvent(new Event("zen-score"));
@@ -461,13 +478,15 @@
     document.getElementById("reset-dialog").showModal();
   });
   document.getElementById("reset-confirm").addEventListener("click", () => {
-    const best = game.best;
+    const {best, recordCoin} = game;
     game = newGame();
+    game.recordCoin = recordCoin;
     colors = extendedPalette(game.palette);
     currentPage = 0;
     game.best = best;
     finishAction("Je nieuwe ronde is begonnen.");
   });
 
+  updateRecordCoin();
   saveGame();
   render();
